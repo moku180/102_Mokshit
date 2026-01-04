@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fraud Detection Dashboard</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <div class="header-content">
+                <h1>🛡️ Fraud Detection Dashboard</h1>
+                <div class="status-indicator">
+                    <span class="status-dot"></span>
+                    <span>System Active</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Dashboard -->
+    <main class="container">
+        <!-- Metrics Cards -->
+        <section class="metrics-grid">
+            <div class="metric-card">
+                <div class="metric-icon">🚨</div>
+                <div class="metric-content">
+                    <h3>Total Alerts</h3>
+                    <p class="metric-value" id="totalAlerts">-</p>
+                    <span class="metric-label">High-risk transactions</span>
+                </div>
+            </div>
+
+            <div class="metric-card">
+                <div class="metric-icon">🎯</div>
+                <div class="metric-content">
+                    <h3>Precision@100</h3>
+                    <p class="metric-value" id="precision">-</p>
+                    <span class="metric-label">Model accuracy</span>
+                </div>
+            </div>
+
+            <div class="metric-card">
+                <div class="metric-icon">📊</div>
+                <div class="metric-content">
+                    <h3>Avg Fraud Score</h3>
+                    <p class="metric-value" id="avgScore">-</p>
+                    <span class="metric-label">Mean risk level</span>
+                </div>
+            </div>
+
+            <div class="metric-card">
+                <div class="metric-icon">✅</div>
+                <div class="metric-content">
+                    <h3>True Frauds</h3>
+                    <p class="metric-value" id="trueFrauds">-</p>
+                    <span class="metric-label">Confirmed cases</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Main Content Grid -->
+        <div class="content-grid">
+            <!-- Alerts Feed -->
+            <section class="panel alerts-panel">
+                <div class="panel-header">
+                    <h2>🚨 Recent Alerts</h2>
+                    <div class="filter-controls">
+                        <select id="riskFilter" class="filter-select">
+                            <option value="0.5">All Alerts (≥0.5)</option>
+                            <option value="0.7" selected>High Risk (≥0.7)</option>
+                            <option value="0.9">Critical (≥0.9)</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="alerts-container" id="alertsContainer">
+                    <div class="loading">Loading alerts...</div>
+                </div>
+            </section>
+
+            <!-- Visualizations -->
+            <section class="panel charts-panel">
+                <div class="panel-header">
+                    <h2>📈 Analytics</h2>
+                </div>
+                <div class="charts-grid">
+                    <div class="chart-container">
+                        <h3>Fraud Score Distribution</h3>
+                        <canvas id="distributionChart"></canvas>
+                    </div>
+                    <div class="chart-container">
+                        <h3>Alerts Timeline</h3>
+                        <canvas id="timelineChart"></canvas>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <!-- SHAP Explanation Modal -->
+    <div id="shapModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>🔍 Fraud Explanation</h2>
+                <button class="close-btn" onclick="closeModal()">&times;</button>
+            </div>
+            <div class="modal-body" id="shapContent">
+                <div class="loading">Loading explanation...</div>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
