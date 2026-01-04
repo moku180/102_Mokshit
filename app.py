@@ -21,13 +21,42 @@ print("Loading model and data...")
 model = lgb.Booster(model_file='models/lightgbm_best.txt')
 predictions_df = pd.read_csv('outputs/fraud_score.csv')
 
-# Load test data for SHAP
+# Get the range of transaction indices from predictions
+min_idx = int(predictions_df['transaction_index'].min())
+max_idx = int(predictions_df['transaction_index'].max())
+print(f"Prediction indices range: {min_idx:,} to {max_idx:,}")
+
+# Load test data matching the prediction indices
+# We'll load first 50k transactions from the test set for SHAP
 print("Loading test data for SHAP analysis...")
-test_data = pd.read_csv('data/raw/PS_20174392719_1491204439457_log.csv', nrows=100000)
+full_data = pd.read_csv('data/raw/PS_20174392719_1491204439457_log.csv')
 from data_loader import clean_data
-test_data = clean_data(test_data)
-test_data, _ = engineer_features(test_data)
-feature_cols = get_feature_columns(test_data)
+
+# Calculate the 80/20 split point
+split_idx = int(len(full_data) * 0.8)
+test_set_size = len(full_data) - split_idx
+print(f"Test set starts at index: {split_idx:,}, size: {test_set_size:,}")
+
+# Load LAST 50k of test set (these contain the highest fraud scores)
+# The predictions are sorted by fraud score, so highest scores are at the end
+start_idx = len(full_data) - 50000
+test_sample = full_data.iloc[start_idx:].copy()
+
+print(f"Loading transactions from index {start_idx:,} to {len(full_data):,}")
+
+# Store original indices before cleaning
+original_indices = test_sample.index.copy()
+
+test_sample = clean_data(test_sample)
+test_sample, _ = engineer_features(test_sample)
+
+# Restore original indices so they match the prediction transaction_index
+test_sample.index = original_indices
+
+feature_cols = get_feature_columns(test_sample)
+
+print(f"Test sample loaded: {len(test_sample):,} transactions")
+print(f"Index range: {test_sample.index.min():,} to {test_sample.index.max():,}")
 
 # Initialize SHAP explainer
 print("Initializing SHAP explainer...")
@@ -102,11 +131,17 @@ def get_metrics():
 def explain_transaction(transaction_id):
     """Get SHAP explanation for a specific transaction."""
     try:
-        # Find transaction in test data
-        if transaction_id >= len(test_data):
-            return jsonify({'error': 'Transaction not found'}), 404
+        # Check if transaction is in our sample
+        if transaction_id not in test_sample.index:
+            # Return a helpful message
+            return jsonify({
+                'error': 'SHAP explanation not available',
+                'message': f'Transaction {transaction_id} is outside the loaded sample range ({test_sample.index.min()}-{test_sample.index.max()}). SHAP explanations are available for the first 50,000 test transactions for performance reasons.',
+                'suggestion': 'Try clicking on an earlier transaction in the alert list.'
+            }), 404
         
-        transaction = test_data.iloc[transaction_id:transaction_id+1]
+        # Get the transaction by its index
+        transaction = test_sample.loc[[transaction_id]]
         X = transaction[feature_cols]
         
         # Get SHAP values
@@ -181,6 +216,7 @@ if __name__ == '__main__':
     print("="*60)
     print(f"📊 Loaded {len(predictions_df):,} predictions")
     print(f"🎯 High-risk alerts: {len(predictions_df[predictions_df['fraud_score'] >= 0.7]):,}")
+    print(f"🔍 SHAP available for transactions: {test_sample.index.min():,} - {test_sample.index.max():,}")
     print(f"🌐 Dashboard: http://localhost:5000")
     print("="*60 + "\n")
     
